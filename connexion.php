@@ -16,6 +16,7 @@ try {
     // Ajouter SSL si on est sur le cloud (port différent de 3306 souvent signe de cloud)
     if (getenv('DB_PORT')) {
         $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt';
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false; // Disable strict verify for compatibility
     }
 
     $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8";
