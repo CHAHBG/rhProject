@@ -11,8 +11,8 @@ try {
     // Info Employé + Grade
     $stmt = $pdo->prepare("
         SELECT * 
-        FROM Employe e 
-        JOIN Grade g ON e.codeGr = g.codeGr 
+        FROM employe e 
+        JOIN grade g ON e.codeGr = g.codeGr 
         WHERE e.matricule = ?
     ");
     $stmt->execute([$matricule]);
@@ -25,8 +25,8 @@ try {
     // Info Indemnités
     $stmt2 = $pdo->prepare("
         SELECT i.libelle, a.montant 
-        FROM ADroit a
-        JOIN Indemnite i ON a.codeInd = i.codeInd
+        FROM adroit a
+        JOIN indemnite i ON a.codeInd = i.codeInd
         WHERE a.codeGr = ?
     ");
     $stmt2->execute([$data['codeGr']]);
