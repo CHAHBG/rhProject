@@ -17,3 +17,13 @@ RUN chown -R www-data:www-data /var/www/html
 
 # Expose port 80 (Render uses this by default)
 EXPOSE 80
+
+# Create a startup script that initializes the database before starting Apache
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "[Startup] Initializing database schema..."\n\
+php /var/www/html/init-db.php\n\
+echo "[Startup] Starting Apache..."\n\
+apache2-foreground' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
