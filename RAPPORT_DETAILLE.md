@@ -1227,6 +1227,193 @@ L'application offre une base solide pour :
 - GitHub Issues: https://github.com/CHAHBG/rhProject
 - Render Support: https://render.com/support
 - Aiven Support: https://aiven.io/help
+---
+
+**Rapport Rédigé:** 26 Décembre 2025  
+**Statut Application:** 🟢 Production Active  
+**Version Application:** 1.0.0  
+**Environnement:** Cloud (Render + Aiven)
+
+---
+
+*Document Confidentiel - Équipe de Développement*
+
+---
+
+## 🧩 Réponses aux Questions
+
+### 1) Trouver le schéma relationnel
+
+- Le schéma relationnel complet est détaillé dans la section [Modèle de Données Relationnel](#modèle-de-données-relationnel).  
+- Entités principales: `grade`, `indemnite`, `employe`, `adroit` (association).  
+- Relations:  
+    - `employe.codeGr` → `grade.codeGr`  
+    - `adroit.codeGr` → `grade.codeGr`  
+    - `adroit.codeInd` → `indemnite.codeInd`
+
+### 2) Création des tables et insertion
+
+Les créations et insertions complètes se trouvent dans [rh_projet.sql](rh_projet.sql). Ci-dessous une version synthétique, en minuscules (compatible MySQL cloud sensible à la casse):
+
+**Création des tables avec contraintes:**
+
+```sql
+-- Table grade
+CREATE TABLE grade (
+    codeGr VARCHAR(5) NOT NULL PRIMARY KEY,
+    salaireBase DECIMAL(10,2) NOT NULL,
+    intitule VARCHAR(100)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table indemnite
+CREATE TABLE indemnite (
+    codeInd VARCHAR(5) NOT NULL PRIMARY KEY,
+    libelle VARCHAR(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table employe
+CREATE TABLE employe (
+    matricule VARCHAR(10) NOT NULL PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    tel VARCHAR(15),
+    codeGr VARCHAR(5),
+    FOREIGN KEY (codeGr) REFERENCES grade(codeGr)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table d'association adroit
+CREATE TABLE adroit (
+    codeGr VARCHAR(5) NOT NULL,
+    codeInd VARCHAR(5) NOT NULL,
+    montant DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (codeGr, codeInd),
+    FOREIGN KEY (codeGr) REFERENCES grade(codeGr),
+    FOREIGN KEY (codeInd) REFERENCES indemnite(codeInd)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+**Insertion de données d’exemple:**
+
+```sql
+-- Grades
+INSERT INTO grade VALUES ('A1', 150000.00, 'Agent de maîtrise');
+INSERT INTO grade VALUES ('A4', 350000.00, 'Superviseur');
+INSERT INTO grade VALUES ('A5', 450000.00, 'Cadre Supérieur');
+
+-- Indemnités
+INSERT INTO indemnite VALUES ('I1', 'Transport');
+INSERT INTO indemnite VALUES ('I2', 'Logement');
+
+-- Droits (montants par grade)
+INSERT INTO adroit VALUES ('A5', 'I1', 25000.00);
+INSERT INTO adroit VALUES ('A5', 'I2', 100000.00);
+
+-- Employés
+INSERT INTO employe VALUES ('M01', 'Toto', '30641617', 'A3');
+INSERT INTO employe VALUES ('M04', 'Froto', '20320132', 'A5');
+```
+
+### 3) Script PHP PDO (sans SUM, AVG...)
+
+Les fonctions sont implémentées dans [fonctions.php](fonctions.php). Ci-dessous des extraits conformes à l’exigence de ne pas utiliser d’agrégats SQL:
+
+**a) `nbIndemnite(matricule)` : nombre d’indemnités d’un employé**
+
+```php
+function nbIndemnite($matricule) {
+        global $pdo;
+        $stmt = $pdo->prepare("SELECT codeGr FROM employe WHERE matricule = ?");
+        $stmt->execute([$matricule]);
+        $emp = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$emp) return 0;
+
+        $stmt2 = $pdo->prepare("SELECT * FROM adroit WHERE codeGr = ?");
+        $stmt2->execute([$emp['codeGr']]);
+        $indemnites = $stmt2->fetchAll();
+        return count($indemnites);
+}
+```
+
+**b) `totalIndeminite(codeGr)` : somme des indemnités d’un grade**
+
+```php
+function totalIndeminite($codeGr) {
+        global $pdo;
+        $somme = 0;
+        $stmt = $pdo->prepare("SELECT montant FROM adroit WHERE codeGr = ?");
+        $stmt->execute([$codeGr]);
+        $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($lignes as $ligne) {
+                $somme += $ligne['montant'];
+        }
+        return $somme;
+}
+```
+
+**c) `salaireNet(matricule)` : Base + Indemnités − 5% Base**
+
+```php
+function salaireNet($matricule) {
+        global $pdo;
+        $stmt = $pdo->prepare("\n        SELECT g.codeGr, g.salaireBase \n        FROM employe e \n        JOIN grade g ON e.codeGr = g.codeGr \n        WHERE e.matricule = ?\n    ");
+        $stmt->execute([$matricule]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$data) return 0;
+
+        $salaireBase = $data['salaireBase'];
+        $totalInd = totalIndeminite($data['codeGr']);
+        $impot = $salaireBase * 0.05;
+        return $salaireBase + $totalInd - $impot;
+}
+```
+
+**d) `salaireMax()` : nom de l’employé le plus payé**
+
+```php
+function salaireMax() {
+        global $pdo;
+        $stmt = $pdo->query("SELECT matricule, nom FROM employe");
+        $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $maxSalaire = -1; $nomRiche = "";
+        foreach ($employes as $emp) {
+                $salaire = salaireNet($emp['matricule']);
+                if ($salaire > $maxSalaire) {
+                        $maxSalaire = $salaire; $nomRiche = $emp['nom'];
+                }
+        }
+        return $nomRiche . " (" . number_format($maxSalaire, 0, ',', ' ') . " FCFA)";
+}
+```
+
+**e) `totalSalaire()` : somme des salaires nets de tous les employés**
+
+```php
+function totalSalaire() {
+        global $pdo;
+        $stmt = $pdo->query("SELECT matricule FROM employe");
+        $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $totalGlobal = 0;
+        foreach ($employes as $emp) {
+                $totalGlobal += salaireNet($emp['matricule']);
+        }
+        return $totalGlobal;
+}
+```
+
+**f) Bulletin de salaire**
+
+- Génération réalisée par [bulletin.php](bulletin.php).  
+- Requêtes principales utilisées:
+
+```php
+// Employé + grade
+$stmt = $pdo->prepare("\n    SELECT * \n    FROM employe e \n    JOIN grade g ON e.codeGr = g.codeGr \n    WHERE e.matricule = ?\n");
+
+// Détail des indemnités du grade
+$stmt2 = $pdo->prepare("\n    SELECT i.libelle, a.montant \n    FROM adroit a \n    JOIN indemnite i ON a.codeInd = i.codeInd \n    WHERE a.codeGr = ?\n");
+```
+
+**Lien de connexion production:**  
+https://rhproject-xrun.onrender.com/
 
 ---
 
