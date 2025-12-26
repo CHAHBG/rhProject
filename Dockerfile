@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 # Enable Apache mod_rewrite if needed (good practice for PHP apps)
 RUN a2enmod rewrite
 
+# Set ServerName to avoid noisy warnings
+RUN echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf && a2enconf servername
+
 # Copy application source
 COPY . /var/www/html/
 
