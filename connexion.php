@@ -22,6 +22,7 @@ try {
     $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8";
     $pdo = new PDO($dsn, $username, $password, $options);
 } catch (PDOException $e) {
-    die("Erreur de connexion : " . $e->getMessage());
+    // Avoid fatal exit; allow pages to render gracefully
+    $pdo = null;
 }
 ?>

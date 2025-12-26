@@ -3,6 +3,9 @@ require_once 'fonctions.php';
 
 // Fetch all employees
 try {
+    if (!$pdo) {
+        throw new PDOException('Connexion DB indisponible');
+    }
     $stmt = $pdo->query("SELECT e.matricule, e.nom, e.codeGr, g.salaireBase FROM employe e LEFT JOIN grade g ON e.codeGr = g.codeGr ORDER BY e.matricule ASC");
     $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -10,7 +13,10 @@ try {
     $stmtGrades = $pdo->query("SELECT codeGr, intitule FROM grade");
     $grades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    die("Erreur : " . $e->getMessage());
+    // Graceful fallback when DB is unreachable
+    $employes = [];
+    $grades = [];
+    $dbError = $e->getMessage();
 }
 
 $maxSalaireInfo = salaireMax();
