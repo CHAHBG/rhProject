@@ -15,8 +15,8 @@ try {
     // 1. Get Employee Basic Info
     $stmt = $pdo->prepare("
         SELECT e.matricule, e.nom, e.codeGr, g.intitule as gradeIntitule, g.salaireBase 
-        FROM Employe e 
-        JOIN Grade g ON e.codeGr = g.codeGr 
+        FROM employe e 
+        JOIN grade g ON e.codeGr = g.codeGr 
         WHERE e.matricule = ?
     ");
     $stmt->execute([$matricule]);
@@ -31,8 +31,8 @@ try {
     // We recreate logic from totalIndeminite to get individual items for the modal
     $stmt2 = $pdo->prepare("
         SELECT i.libelle, a.montant 
-        FROM ADroit a
-        JOIN Indemnite i ON a.codeInd = i.codeInd
+        FROM adroit a
+        JOIN indemnite i ON a.codeInd = i.codeInd
         WHERE a.codeGr = ?
     ");
     $stmt2->execute([$emp['codeGr']]);

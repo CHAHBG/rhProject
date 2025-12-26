@@ -3,11 +3,11 @@ require_once 'fonctions.php';
 
 // Fetch all employees
 try {
-    $stmt = $pdo->query("SELECT e.matricule, e.nom, e.codeGr, g.salaireBase FROM Employe e LEFT JOIN Grade g ON e.codeGr = g.codeGr ORDER BY e.matricule ASC");
+    $stmt = $pdo->query("SELECT e.matricule, e.nom, e.codeGr, g.salaireBase FROM employe e LEFT JOIN grade g ON e.codeGr = g.codeGr ORDER BY e.matricule ASC");
     $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch grades for filter and modal
-    $stmtGrades = $pdo->query("SELECT codeGr, intitule FROM Grade");
+    $stmtGrades = $pdo->query("SELECT codeGr, intitule FROM grade");
     $grades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die("Erreur : " . $e->getMessage());

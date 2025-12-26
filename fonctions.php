@@ -5,7 +5,7 @@ require_once 'connexion.php';
 function nbIndemnite($matricule) {
     global $pdo;
     // 1. Trouver le grade de l'employé
-    $stmt = $pdo->prepare("SELECT codeGr FROM Employe WHERE matricule = ?");
+    $stmt = $pdo->prepare("SELECT codeGr FROM employe WHERE matricule = ?");
     $stmt->execute([$matricule]);
     $emp = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -13,7 +13,7 @@ function nbIndemnite($matricule) {
     
     // 2. Compter les indemnités liées à ce grade
     // Note: On n'utilise pas COUNT(*) en SQL pour respecter la consigne, on compte en PHP.
-    $stmt2 = $pdo->prepare("SELECT * FROM ADroit WHERE codeGr = ?");
+    $stmt2 = $pdo->prepare("SELECT * FROM adroit WHERE codeGr = ?");
     $stmt2->execute([$emp['codeGr']]);
     $indemnites = $stmt2->fetchAll();
     
@@ -26,7 +26,7 @@ function totalIndeminite($codeGr) {
     $somme = 0;
     
     // Récupérer toutes les lignes ADroit pour ce grade
-    $stmt = $pdo->prepare("SELECT montant FROM ADroit WHERE codeGr = ?");
+    $stmt = $pdo->prepare("SELECT montant FROM adroit WHERE codeGr = ?");
     $stmt->execute([$codeGr]);
     $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -45,8 +45,8 @@ function salaireNet($matricule) {
     // Récupérer le grade et le salaire de base
     $stmt = $pdo->prepare("
         SELECT g.codeGr, g.salaireBase 
-        FROM Employe e 
-        JOIN Grade g ON e.codeGr = g.codeGr 
+        FROM employe e 
+        JOIN grade g ON e.codeGr = g.codeGr 
         WHERE e.matricule = ?
     ");
     $stmt->execute([$matricule]);
@@ -72,7 +72,7 @@ function salaireMax() {
     global $pdo;
     
     // Récupérer tous les employés
-    $stmt = $pdo->query("SELECT matricule, nom FROM Employe");
+    $stmt = $pdo->query("SELECT matricule, nom FROM employe");
     $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     $maxSalaire = -1;
@@ -94,7 +94,7 @@ function salaireMax() {
 function totalSalaire() {
     global $pdo;
     
-    $stmt = $pdo->query("SELECT matricule FROM Employe");
+    $stmt = $pdo->query("SELECT matricule FROM employe");
     $employes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     $totalGlobal = 0;

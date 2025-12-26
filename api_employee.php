@@ -26,7 +26,7 @@ if ($method === 'POST') {
 
         try {
             // Check if matricule exists
-            $check = $pdo->prepare("SELECT matricule FROM Employe WHERE matricule = ?");
+            $check = $pdo->prepare("SELECT matricule FROM employe WHERE matricule = ?");
             $check->execute([$matricule]);
             if ($check->rowCount() > 0) {
                 echo json_encode(['success' => false, 'message' => 'Ce matricule existe déjà.']);
@@ -34,7 +34,7 @@ if ($method === 'POST') {
             }
 
             // Insert new employee
-            $stmt = $pdo->prepare("INSERT INTO Employe (matricule, nom, codeGr, tel) VALUES (?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO employe (matricule, nom, codeGr, tel) VALUES (?, ?, ?, ?)");
             $result = $stmt->execute([$matricule, $nom, $codeGr, $tel]);
 
             if ($result) {
@@ -59,7 +59,7 @@ if ($method === 'POST') {
         }
 
         try {
-            $stmt = $pdo->prepare("DELETE FROM Employe WHERE matricule = ?");
+            $stmt = $pdo->prepare("DELETE FROM employe WHERE matricule = ?");
             $result = $stmt->execute([$matricule]);
 
             if ($result) {
